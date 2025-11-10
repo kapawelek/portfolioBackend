@@ -1,0 +1,24 @@
+name: Warmup Render
+
+on:
+  schedule:
+    # co 10 minut w godzinach 06–23 czasu PL (UTC 05–22 w zimie)
+    - cron: '*/10 5-22 * * *'
+  workflow_dispatch: {}
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping health endpoint (max 3 próby)
+        run: |
+          set -e
+          URL="${{ secrets.RENDER_HEALTH_URL }}"
+          for i in 1 2 3; do
+            code=$(curl -s -o /dev/null -w "%{http_code}" "$URL" || true)
+            echo "Attempt $i -> HTTP $code"
+            [ "$code" = "200" ] && exit 0
+            sleep 15
+          done
+          echo "Backend still sleeping or error"
+          exit 1
